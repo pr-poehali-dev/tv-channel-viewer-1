@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import VideoPlayer from '@/components/VideoPlayer';
 
 interface Channel {
   id: number;
@@ -15,6 +16,7 @@ interface Channel {
   nextShow: string;
   category: string;
   isLive: boolean;
+  streamUrl: string;
 }
 
 interface Schedule {
@@ -24,14 +26,14 @@ interface Schedule {
 }
 
 const mockChannels: Channel[] = [
-  { id: 1, name: 'Первый', logo: '📺', currentShow: 'Время', nextShow: 'Поле чудес', category: 'Общие', isLive: true },
-  { id: 2, name: 'Россия 1', logo: '🎬', currentShow: 'Вечерний эфир', nextShow: 'Кино', category: 'Общие', isLive: true },
-  { id: 3, name: 'НТВ', logo: '📰', currentShow: 'Сегодня', nextShow: 'Детектив', category: 'Новости', isLive: true },
-  { id: 4, name: 'ТНТ', logo: '🎭', currentShow: 'Комеди Клаб', nextShow: 'Импровизация', category: 'Развлечения', isLive: true },
-  { id: 5, name: 'СТС', logo: '🎪', currentShow: 'Уральские пельмени', nextShow: 'Кино', category: 'Развлечения', isLive: true },
-  { id: 6, name: 'РЕН ТВ', logo: '🔥', currentShow: 'Самые шокирующие', nextShow: 'Засекреченные списки', category: 'Познавательные', isLive: true },
-  { id: 7, name: 'Пятница', logo: '🎉', currentShow: 'Орел и решка', nextShow: 'На ножах', category: 'Развлечения', isLive: true },
-  { id: 8, name: 'Матч ТВ', logo: '⚽', currentShow: 'Футбол', nextShow: 'Хоккей', category: 'Спорт', isLive: true },
+  { id: 1, name: 'Первый', logo: '📺', currentShow: 'Время', nextShow: 'Поле чудес', category: 'Общие', isLive: true, streamUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8' },
+  { id: 2, name: 'Россия 1', logo: '🎬', currentShow: 'Вечерний эфир', nextShow: 'Кино', category: 'Общие', isLive: true, streamUrl: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8' },
+  { id: 3, name: 'НТВ', logo: '📰', currentShow: 'Сегодня', nextShow: 'Детектив', category: 'Новости', isLive: true, streamUrl: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8' },
+  { id: 4, name: 'ТНТ', logo: '🎭', currentShow: 'Комеди Клаб', nextShow: 'Импровизация', category: 'Развлечения', isLive: true, streamUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8' },
+  { id: 5, name: 'СТС', logo: '🎪', currentShow: 'Уральские пельмени', nextShow: 'Кино', category: 'Развлечения', isLive: true, streamUrl: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8' },
+  { id: 6, name: 'РЕН ТВ', logo: '🔥', currentShow: 'Самые шокирующие', nextShow: 'Засекреченные списки', category: 'Познавательные', isLive: true, streamUrl: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8' },
+  { id: 7, name: 'Пятница', logo: '🎉', currentShow: 'Орел и решка', nextShow: 'На ножах', category: 'Развлечения', isLive: true, streamUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8' },
+  { id: 8, name: 'Матч ТВ', logo: '⚽', currentShow: 'Футбол', nextShow: 'Хоккей', category: 'Спорт', isLive: true, streamUrl: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8' },
 ];
 
 const mockSchedule: Schedule[] = [
@@ -48,6 +50,7 @@ export default function Index() {
   const [quality, setQuality] = useState<'HD' | 'SD'>('HD');
   const [favorites, setFavorites] = useState<number[]>([1, 4, 8]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const toggleFavorite = (channelId: number) => {
     setFavorites(prev => 
@@ -93,59 +96,29 @@ export default function Index() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
             <Card className="overflow-hidden bg-gradient-to-br from-card to-muted/30 border-border/50">
-              <div className="aspect-video bg-black/90 relative group">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-primary/20 flex items-center justify-center backdrop-blur-sm">
-                      <Icon name="Play" size={40} className="text-primary ml-1" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-white mb-2">{selectedChannel?.name}</h2>
-                      <p className="text-white/70">{selectedChannel?.currentShow}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <Button size="icon" variant="ghost" className="text-white hover:text-primary">
-                        <Icon name="Play" size={24} />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="text-white hover:text-primary">
-                        <Icon name="Volume2" size={20} />
-                      </Button>
-                      <span className="text-white text-sm">20:15 / 21:00</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        size="sm" 
-                        variant={quality === 'HD' ? 'default' : 'outline'}
-                        onClick={() => setQuality('HD')}
-                        className="text-xs"
-                      >
-                        HD
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant={quality === 'SD' ? 'default' : 'outline'}
-                        onClick={() => setQuality('SD')}
-                        className="text-xs"
-                      >
-                        SD
-                      </Button>
-                      <Button size="icon" variant="ghost" className="text-white hover:text-primary">
-                        <Icon name="Maximize" size={20} />
-                      </Button>
+              <div className="aspect-video bg-black relative group">
+                {selectedChannel && isPlaying ? (
+                  <VideoPlayer 
+                    src={selectedChannel.streamUrl}
+                    onQualityChange={(q) => setQuality(q as 'HD' | 'SD')}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center cursor-pointer" onClick={() => setIsPlaying(true)}>
+                    <div className="text-center space-y-4">
+                      <div className="w-20 h-20 mx-auto rounded-full bg-primary/20 flex items-center justify-center backdrop-blur-sm hover:bg-primary/30 transition-colors">
+                        <Icon name="Play" size={40} className="text-primary ml-1" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-white mb-2">{selectedChannel?.name}</h2>
+                        <p className="text-white/70">{selectedChannel?.currentShow}</p>
+                        <p className="text-white/50 text-sm mt-2">Нажмите для воспроизведения</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full w-1/3 bg-primary rounded-full" />
-                  </div>
-                </div>
+                )}
 
                 {selectedChannel?.isLive && (
-                  <div className="absolute top-4 left-4">
+                  <div className="absolute top-4 left-4 z-10">
                     <Badge className="bg-accent text-white border-0 gap-1.5 animate-fade-in">
                       <span className="w-2 h-2 bg-white rounded-full animate-pulse-slow" />
                       LIVE
@@ -153,7 +126,7 @@ export default function Index() {
                   </div>
                 )}
 
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4 z-10">
                   <Badge variant="secondary" className="backdrop-blur-sm">
                     {quality}
                   </Badge>
@@ -243,7 +216,10 @@ export default function Index() {
                             ? 'bg-gradient-to-br from-primary/20 to-secondary/20 border-primary' 
                             : 'bg-card/50 hover:bg-card'
                         }`}
-                        onClick={() => setSelectedChannel(channel)}
+                        onClick={() => {
+                          setSelectedChannel(channel);
+                          setIsPlaying(false);
+                        }}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-2xl">
@@ -287,7 +263,10 @@ export default function Index() {
                         <Card
                           key={channel.id}
                           className="p-4 cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg bg-card/50 hover:bg-card"
-                          onClick={() => setSelectedChannel(channel)}
+                          onClick={() => {
+                            setSelectedChannel(channel);
+                            setIsPlaying(false);
+                          }}
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-2xl">
@@ -333,7 +312,10 @@ export default function Index() {
                         <Card
                           key={channel.id}
                           className="p-4 cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg bg-card/50 hover:bg-card"
-                          onClick={() => setSelectedChannel(channel)}
+                          onClick={() => {
+                            setSelectedChannel(channel);
+                            setIsPlaying(false);
+                          }}
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-2xl">
