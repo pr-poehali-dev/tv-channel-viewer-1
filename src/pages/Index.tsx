@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import VideoPlayer from '@/components/VideoPlayer';
+import PlaylistLoader from '@/components/PlaylistLoader';
+import { M3UChannel } from '@/lib/m3uParser';
 
 interface Channel {
   id: number;
@@ -46,6 +48,7 @@ const mockSchedule: Schedule[] = [
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState('channels');
+  const [channels, setChannels] = useState<Channel[]>(mockChannels);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(mockChannels[0]);
   const [quality, setQuality] = useState<'HD' | 'SD'>('HD');
   const [favorites, setFavorites] = useState<number[]>([1, 4, 8]);
@@ -60,12 +63,31 @@ export default function Index() {
     );
   };
 
-  const filteredChannels = mockChannels.filter(channel =>
+  const handlePlaylistLoad = (m3uChannels: M3UChannel[]) => {
+    const newChannels: Channel[] = m3uChannels.map((ch) => ({
+      id: ch.id,
+      name: ch.name,
+      logo: ch.logo,
+      streamUrl: ch.streamUrl,
+      category: ch.category,
+      currentShow: 'Прямой эфир',
+      nextShow: 'Следующая программа',
+      isLive: true,
+    }));
+    setChannels(newChannels);
+    if (newChannels.length > 0) {
+      setSelectedChannel(newChannels[0]);
+      setIsPlaying(false);
+    }
+    setFavorites([]);
+  };
+
+  const filteredChannels = channels.filter(channel =>
     channel.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     channel.currentShow.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const favoriteChannels = mockChannels.filter(channel => favorites.includes(channel.id));
+  const favoriteChannels = channels.filter(channel => favorites.includes(channel.id));
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -81,6 +103,7 @@ export default function Index() {
           </div>
           
           <div className="flex items-center gap-4">
+            <PlaylistLoader onPlaylistLoad={handlePlaylistLoad} />
             <Button variant="ghost" size="icon" className="relative">
               <Icon name="Bell" size={20} />
               <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full animate-pulse-slow" />
@@ -208,7 +231,7 @@ export default function Index() {
               <TabsContent value="channels" className="mt-4">
                 <ScrollArea className="h-[calc(100vh-280px)]">
                   <div className="space-y-2 pr-4">
-                    {mockChannels.map((channel) => (
+                    {channels.map((channel) => (
                       <Card
                         key={channel.id}
                         className={`p-4 cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg ${
